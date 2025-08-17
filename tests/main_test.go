@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -78,5 +79,27 @@ func TestGetBooks(t *testing.T) {
 
 	if len(response.Data.([]interface{})) == 0 {
 		t.Errorf("Expected non-empty books list")
+	}
+}
+
+func TestGetBook(t *testing.T) {
+	setupTestDB()
+	book := addBook()
+	router := gin.Default()
+	router.GET("/book/:id", api.GetBook)
+
+	req, _ := http.NewRequest("GET", "/book/"+strconv.Itoa(int(book.ID)), nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if status := w.Code; status != http.StatusOK {
+		t.Errorf("Expected status %d, got %d", http.StatusOK, status)
+	}
+
+	var response api.JsonResponse
+	json.NewDecoder(w.Body).Decode(&response)
+
+	if response.Data == nil || response.Data.(map[string]interface{})["id"] != float64(book.ID) {
+		t.Errorf("Expected book ID %d, got nil or wrong ID", book.ID)
 	}
 }
