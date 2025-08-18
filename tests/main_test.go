@@ -103,3 +103,30 @@ func TestGetBook(t *testing.T) {
 		t.Errorf("Expected book ID %d, got nil or wrong ID", book.ID)
 	}
 }
+
+func TestUpdateBook(t *testing.T) {
+	setupTestDB()
+	book := addBook()
+	router := gin.Default()
+	router.PUT("/book/:id", api.UpdateBook)
+
+	updateBook := api.Book{
+		Title: "Advanced Go Programming", Author: "Demo Author name", Year: 2021,
+	}
+
+	jsonValue, _ := json.Marshal(updateBook)
+	req, _ := http.NewRequest("PUT", "/book/"+strconv.Itoa(int(book.ID)), bytes.NewBuffer(jsonValue))
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	if status := w.Code; status != http.StatusOK {
+		t.Errorf("Expected status %d, got %d", http.StatusOK, status)
+	}
+
+	var response api.JsonResponse
+	json.NewDecoder(w.Body).Decode(&response)
+
+	if response.Data == nil || response.Data.(map[string]interface{})["title"] != "Advanced Go Programming" {
+		t.Errorf("Expected updated book title 'Advanced Go Programming', got %v", response.Data)
+	}
+}
